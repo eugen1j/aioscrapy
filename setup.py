@@ -2,7 +2,6 @@ import os
 import sys
 from shutil import rmtree
 
-from pkg_resources import parse_requirements
 from setuptools import setup, Command
 
 # Package meta-data.
@@ -39,15 +38,15 @@ class UploadCommand(Command):
 
     def run(self):
         try:
-            self.status("Removing previous builds…")
+            self.status("Removing previous builds...")
             rmtree(os.path.join(here, "dist"))
         except OSError:
             pass
 
-        self.status("Building Source and Wheel distribution…")
+        self.status("Building Source and Wheel distribution...")
         os.system("{0} setup.py sdist bdist_wheel".format(sys.executable))
 
-        self.status("Uploading the package to PyPI via Twine…")
+        self.status("Uploading the package to PyPI via Twine...")
         os.system("twine upload dist/*")
 
         sys.exit()
@@ -58,7 +57,15 @@ setup(
     version=VERSION,
     author=AUTHOR,
     packages=[NAME],
-    install_requires=parse_requirements('requirements.txt'),
+    install_requires=[
+        "pyfakefs",
+        "pytest",
+        "beautifulsoup4",
+        "aiohttp",
+        "pytest-asyncio",
+        "lxml",
+        "pytest-aiohttp",
+    ],
     description=DESCRIPTION,
     package_dir={NAME: NAME},
     include_package_data=True,
@@ -75,7 +82,7 @@ setup(
     python_requires=REQUIRES_PYTHON,
     zip_safe=False,
     classifiers=[
-        "License :: Apache License 2.0",
+        "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.7",
         "Development Status :: 5 - Production/Stable",
