@@ -5,3 +5,5 @@ aiohttp
 pytest-asyncio
 lxml
 pytest-aiohttp
+codecov
+pytest-cov
