@@ -1,7 +1,7 @@
 import aiohttp
 import pytest
 
-from spider.session import ProxyPool, ProxySessionPool, SingleSessionPool
+from aioscrapy.session import ProxyPool, ProxySessionPool, SingleSessionPool
 
 
 def test_proxy_pool():

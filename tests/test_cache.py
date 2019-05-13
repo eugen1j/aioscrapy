@@ -1,4 +1,4 @@
-from spider.cache import FileCache, FakeCache
+from aioscrapy.cache import FileCache, FakeCache
 
 
 def test_file_cache(tmpdir: str):

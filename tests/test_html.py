@@ -1,6 +1,6 @@
 import bs4
 
-from spider import select_one, select_all, select_text_one
+from aioscrapy import select_one, select_all, select_text_one
 
 
 def test_select_one():

@@ -1,4 +1,4 @@
-from spider.worker import Dispatcher
+from aioscrapy.worker import Dispatcher
 
 
 def test_dispatcher():

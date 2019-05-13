@@ -2,8 +2,8 @@ from typing import Optional
 
 import pytest
 
-from spider.cache import FakeCache
-from spider.client import Client, FakeClient, CacheClient, RetryClient
+from aioscrapy.cache import FakeCache
+from aioscrapy.client import Client, FakeClient, CacheClient, RetryClient
 
 
 class ForRetryClient(Client[str, str]):

@@ -5,9 +5,9 @@ from shutil import rmtree
 from setuptools import setup, Command
 
 # Package meta-data.
-NAME = "spider"
+NAME = "aioscrapy"
 DESCRIPTION = "Python asynchronous library for web scrapping"
-URL = "https://github.com/eugen1j/spider"
+URL = "https://github.com/eugen1j/aioscrapy"
 EMAIL = "eugenij.bondar@gmail.com"
 AUTHOR = "eugen1j"
 REQUIRES_PYTHON = ">=3.7.0"
@@ -74,7 +74,7 @@ setup(
     license="Apache License 2.0",
     keywords="""
                 python3
-                spider
+                aioscrapy
                 crawler
                 scrapper
                 python-library
