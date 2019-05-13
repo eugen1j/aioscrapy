@@ -11,7 +11,7 @@ URL = "https://github.com/eugen1j/aioscrapy"
 EMAIL = "eugenij.bondar@gmail.com"
 AUTHOR = "eugen1j"
 REQUIRES_PYTHON = ">=3.7.0"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
