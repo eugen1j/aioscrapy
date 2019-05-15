@@ -1,8 +1,8 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Generic, List, Dict, Iterable, Optional, Set, Tuple
+from typing import Generic, List, Dict, Iterable, Optional, Set
 
-from .client import Client
+from .client import Client, CrawlerClient
 from .typedefs import KT, VT
 
 
@@ -50,7 +50,7 @@ class Master(Generic[KT, VT]):
 
 
 class CrawlerWorker(Worker[KT, VT]):
-    def __init__(self, dispatcher: Dispatcher[KT], client: Client[KT, VT]):
+    def __init__(self, dispatcher: Dispatcher[KT], client: CrawlerClient[KT, VT]):
         self._dispatcher = dispatcher
         self._client = client
 
@@ -58,7 +58,7 @@ class CrawlerWorker(Worker[KT, VT]):
         results: Dict[KT, VT] = {}
         while not self._dispatcher.empty():
             key = self._dispatcher.get()
-            if key:
+            if key is not None:
                 result = await self._client.fetch(key)
                 if result is not None:
                     new_keys, value = result

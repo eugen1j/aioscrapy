@@ -1,7 +1,7 @@
 import traceback
 import aiohttp
 from abc import ABC, abstractmethod
-from typing import Generic, Optional
+from typing import Generic, Optional, Tuple, Iterable
 
 from .cache import Cache
 from .typedefs import KT, VT
@@ -11,6 +11,12 @@ from .session import SessionPool
 class Client(ABC, Generic[KT, VT]):
     @abstractmethod
     async def fetch(self, key: KT) -> Optional[VT]:
+        pass
+
+
+class CrawlerClient(Client, ABC, Generic[KT, VT]):
+    @abstractmethod
+    async def fetch(self, key: KT) -> Optional[Tuple[Iterable[KT], VT]]:
         pass
 
 

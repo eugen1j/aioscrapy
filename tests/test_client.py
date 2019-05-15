@@ -68,12 +68,3 @@ async def test_retry_client_enough_tries():
     key = 'key'
     assert await client.fetch(key) is key
 
-
-@pytest.mark.asyncio
-async def test_retry_client_enough_tries():
-    client = RetryClient(
-        ForRetryClient(4),
-        4
-    )
-    key = 'key'
-    assert await client.fetch(key) is key

@@ -45,7 +45,7 @@ class ProxySessionPool(SessionPool):
             raise IndexError('No sessions left')
         return random.choice(list(self._session_pool.items()))
 
-    def pop(self, proxy: Proxy) -> None:
+    def pop(self, proxy: Optional[Proxy]) -> None:
         if proxy in self._session_pool:
             self._session_pool.pop(proxy)
             self._add_session()
