@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Iterable
 import pytest
 
 from aioscrapy.client import FakeClient, CrawlerClient
-from aioscrapy.worker import Dispatcher, SimpleWorker, CrawlerWorker
+from aioscrapy.worker import Dispatcher, SimpleWorker, CrawlerWorker, Master
 
 
 class ReduceStringClient(CrawlerClient[str, str]):
@@ -71,3 +71,14 @@ async def test_crawler_worker():
         'as': 'as',
         'asd': 'asd',
     }
+
+
+async def test_master():
+    keys = ['key1', 'key2', 'key3']
+    dispatcher = Dispatcher(keys)
+    client = FakeClient()
+    worker1 = SimpleWorker(dispatcher, client)
+    worker2 = SimpleWorker(dispatcher, client)
+    master = Master((worker1, worker2))
+    result = await master.run()
+    assert result == {key: key for key in keys}

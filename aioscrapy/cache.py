@@ -9,11 +9,11 @@ from .typedefs import VT, KT
 class Cache(abc.ABC, Generic[KT, VT]):
     @abc.abstractmethod
     def get(self, key: KT) -> Optional[VT]:
-        pass
+        """ """
 
     @abc.abstractmethod
     def set(self, key: KT, val: VT) -> None:
-        pass
+        """ """
 
 
 class FileCache(Cache[str, VT]):

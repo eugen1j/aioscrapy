@@ -22,11 +22,11 @@ class ProxyPool:
 class SessionPool(abc.ABC):
     @abc.abstractmethod
     def rand(self) -> Session:
-        pass
+        """ """
 
     @abc.abstractmethod
     def pop(self, key: Optional[Proxy]) -> None:
-        pass
+        """ """
 
 
 class ProxySessionPool(SessionPool):

@@ -32,11 +32,11 @@ class Dispatcher(Generic[KT]):
 class Worker(ABC, Generic[KT, VT]):
     @abstractmethod
     async def run(self) -> Dict[KT, VT]:
-        pass
+        """ """
 
 
 class Master(Generic[KT, VT]):
-    def __init__(self, workers: List[Worker[KT, VT]]):
+    def __init__(self, workers: Iterable[Worker[KT, VT]]):
         self._workers = workers
 
     async def run(self) -> Dict[KT, VT]:
