@@ -41,7 +41,6 @@ class WebClient(Client[str, bytes]):
         self._session_pool = session_pool
 
     async def fetch(self, url: str) -> Optional[bytes]:
-        # noinspection PyBroadException
         proxy, session = self._session_pool.rand()
         try:
             response: aiohttp.ClientResponse = await session.get(url, proxy=proxy)
