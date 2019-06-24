@@ -1,4 +1,4 @@
-# Python async library for web scrapping
+# Python async library for web scraping
 
 [![PyPI version](https://badge.fury.io/py/aioscrapy.svg)](https://badge.fury.io/py/aioscrapy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/eugen1j/aioscrapy/blob/master/LICENSE)
@@ -14,24 +14,63 @@
 
 ## Usage
 
+Plain text scraping
 ```python
-from aioscrapy import Client, WebClient, SingleSessionPool, Dispatcher, SimpleWorker
+import asyncio
+import json
+
+from aioscrapy import Client, WebTextClient, SingleSessionPool, Dispatcher, SimpleWorker
+
 
 class CustomClient(Client[str, dict]):
-    def __init__(self, client: WebClient):
+    def __init__(self, client: WebTextClient):
         self._client = client
-        
+
     async def fetch(self, key: str) -> dict:
-        data = self._client.fetch(key)
-        # Processing data, getting result 
-        return {"result": "some_result"}
-        
+        data = await self._client.fetch(key)
+        return json.loads(data)
+
+
 async def main():
     pool = SingleSessionPool()
-    dispatcher = Dispatcher(['https://start-url.example.com'])
-    client = CustomClient(WebClient(pool))
+    dispatcher = Dispatcher(['https://httpbin.org/get'])
+    client = CustomClient(WebTextClient(pool))
     worker = SimpleWorker(dispatcher, client)
-    
+
     result = await worker.run()
     return result
+
+loop = asyncio.get_event_loop()
+print(loop.run_until_complete(main()))
+```
+
+Byte content downloading
+```python
+import asyncio
+
+from aioscrapy import Client, WebByteClient, SingleSessionPool, Dispatcher, SimpleWorker
+
+
+class CustomClient(Client[str, bytes]):
+    def __init__(self, client: WebByteClient):
+        self._client = client
+
+    async def fetch(self, key: str) -> bytes:
+        data = await self._client.fetch(key)
+        return data
+
+
+async def main():
+    pool = SingleSessionPool()
+    dispatcher = Dispatcher(['https://httpbin.org/image'])
+    client = CustomClient(WebByteClient(pool))
+    worker = SimpleWorker(dispatcher, client)
+
+    result = await worker.run()
+    return result
+
+loop = asyncio.get_event_loop()
+data: dict = loop.run_until_complete(main())
+for url, byte_content in data.items():
+    print(url + ": " + str(len(byte_content)) + " bytes")
 ```

@@ -1,5 +1,6 @@
 from .client import (
-    WebClient,
+    WebTextClient,
+    WebByteClient,
     Client,
     CacheClient,
     RetryClient
