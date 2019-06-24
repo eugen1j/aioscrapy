@@ -36,7 +36,7 @@ class CacheClient(Client[str, VT]):
             return new_value
 
 
-class WebClient(Client[str, str]):
+class WebTextClient(Client[str, str]):
     def __init__(self, session_pool: SessionPool):
         self._session_pool = session_pool
 
@@ -45,6 +45,25 @@ class WebClient(Client[str, str]):
         try:
             response: aiohttp.ClientResponse = await session.get(url, proxy=proxy)
             data = await response.text()
+            return data
+        except (aiohttp.ClientHttpProxyError, aiohttp.ClientProxyConnectionError):
+            if proxy is not None:
+                self._session_pool.pop(proxy)
+            return None
+        except aiohttp.ClientError:
+            print(traceback.format_exc())
+            return None
+
+
+class WebByteClient(Client[str, str]):
+    def __init__(self, session_pool: SessionPool):
+        self._session_pool = session_pool
+
+    async def fetch(self, url: str) -> Optional[bytes]:
+        proxy, session = self._session_pool.rand()
+        try:
+            response: aiohttp.ClientResponse = await session.get(url, proxy=proxy)
+            data = await response.read()
             return data
         except (aiohttp.ClientHttpProxyError, aiohttp.ClientProxyConnectionError):
             if proxy is not None:
