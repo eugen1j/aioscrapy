@@ -1,9 +1,13 @@
 from typing import Optional
 
 import pytest
+from aiohttp import ClientResponse
+
+from aioscrapy import SingleSessionPool
 
 from aioscrapy.cache import FakeCache
-from aioscrapy.client import Client, FakeClient, CacheClient, RetryClient, CacheOnlyClient, CacheSkipClient
+from aioscrapy.client import Client, FakeClient, CacheClient, RetryClient, CacheOnlyClient, CacheSkipClient, WebClient, \
+    WebTextClient, WebByteClient
 
 
 class ForRetryClient(Client[str, str]):
@@ -94,3 +98,24 @@ async def test_retry_client_enough_tries():
     )
     key = 'key'
     assert await client.fetch(key) is key
+
+
+@pytest.mark.asyncio
+async def test_web_client_fetch_google():
+    client = WebClient(SingleSessionPool())
+    response = await client.fetch('https://google.com')
+    assert isinstance(response, ClientResponse)
+
+
+@pytest.mark.asyncio
+async def test_web_text_client_fetch_google():
+    client = WebTextClient(SingleSessionPool())
+    response = await client.fetch('https://google.com')
+    assert isinstance(response, str)
+
+
+@pytest.mark.asyncio
+async def test_web_byte_client_fetch_google():
+    client = WebByteClient(SingleSessionPool())
+    response = await client.fetch('https://google.com')
+    assert isinstance(response, bytes)

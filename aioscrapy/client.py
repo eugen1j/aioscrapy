@@ -63,15 +63,16 @@ class CacheSkipClient(Client[str, VT]):
             return new_value
 
 
-class WebClient(Client[str, Tuple[ClientResponse, bytes]]):
+class WebClient(Client[str, ClientResponse]):
     def __init__(self, session_pool: SessionPool):
         self._session_pool = session_pool
 
-    async def fetch(self, key: str) -> Optional[Tuple[ClientResponse, bytes]]:
+    async def fetch(self, key: str) -> Optional[ClientResponse]:
         proxy, session = self._session_pool.rand()
         try:
             response: aiohttp.ClientResponse = await session.get(key, proxy=proxy)
-            return response, await response.read()
+            await response.read()
+            return response
         except (aiohttp.ClientHttpProxyError, aiohttp.ClientProxyConnectionError):
             if proxy is not None:
                 self._session_pool.pop(proxy)
@@ -87,11 +88,10 @@ class WebTextClient(Client[str, str]):
 
     async def fetch(self, key: str) -> Optional[str]:
         client = WebClient(self._session_pool)
-        response_and_body = await client.fetch(key)
-        if response_and_body is None:
+        response = await client.fetch(key)
+        if response is None:
             return None
-        response, body = response_and_body
-        return body.decode(response.get_encoding())
+        return await response.text()
 
 
 class WebByteClient(Client[str, bytes]):
@@ -100,11 +100,11 @@ class WebByteClient(Client[str, bytes]):
 
     async def fetch(self, key: str) -> Optional[bytes]:
         client = WebClient(self._session_pool)
-        response_and_body = await client.fetch(key)
-        if response_and_body is None:
+        response = await client.fetch(key)
+        if response is None:
             return None
-        response, body = response_and_body
-        return body
+        # noinspection PyProtectedMember
+        return response._body
 
 
 class RetryClient(Client[KT, VT]):
