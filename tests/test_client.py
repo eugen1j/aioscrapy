@@ -3,7 +3,7 @@ from typing import Optional
 import pytest
 
 from aioscrapy.cache import FakeCache
-from aioscrapy.client import Client, FakeClient, CacheClient, RetryClient
+from aioscrapy.client import Client, FakeClient, CacheClient, RetryClient, CacheOnlyClient, CacheSkipClient
 
 
 class ForRetryClient(Client[str, str]):
@@ -25,7 +25,7 @@ class ForRetryClient(Client[str, str]):
 async def test_fake_client():
     client = FakeClient()
     key = 'key'
-    assert key == await client.fetch(key)
+    assert await client.fetch(key) == key
 
 
 @pytest.mark.asyncio
@@ -36,8 +36,35 @@ async def test_cache_client():
     )
 
     key = 'key'
-    assert key == await client.fetch(key)
-    assert key == await client.fetch(key)
+    assert await client.fetch(key) == key
+    assert await client.fetch(key) == key
+
+
+@pytest.mark.asyncio
+async def test_cache_only_client():
+    cache = FakeCache()
+    fake_client = FakeClient()
+    key = 'key'
+    client = CacheOnlyClient(
+        FakeClient(),
+        cache
+    )
+
+    assert await client.fetch(key) is None
+    cache.set(key, await fake_client.fetch(key))
+    assert await client.fetch(key) == key
+
+
+@pytest.mark.asyncio
+async def test_cache_skip_client():
+    client = CacheSkipClient(
+        FakeClient(),
+        FakeCache()
+    )
+
+    key = 'key'
+    assert await client.fetch(key) == key
+    assert await client.fetch(key) is None
 
 
 @pytest.mark.asyncio
@@ -67,4 +94,3 @@ async def test_retry_client_enough_tries():
     )
     key = 'key'
     assert await client.fetch(key) is key
-
