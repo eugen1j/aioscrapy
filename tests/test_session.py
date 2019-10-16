@@ -52,16 +52,18 @@ async def test_proxy_session_pool():
 @pytest.mark.asyncio
 async def test_proxy_session_pool_with_cookies():
     proxy = '127.0.0.1:8080'
-    cookie = "cookie1234"
+    cookie_key, cookie_value = "cookie1234", "value12312"
     cookies = {
-        proxy: cookie,
+        proxy: {
+            cookie_key: cookie_value
+        },
     }
     async with ProxySessionPool(ProxyPool([proxy]), 1, cookies=cookies) as pool:
         proxy, session = pool.rand()
         assert proxy == proxy
         assert isinstance(session, aiohttp.ClientSession)
         # noinspection PyProtectedMember
-        assert session._default_headers['Cookie'] == cookie
+        assert session._cookie_jar._cookies[''][cookie_key].value == cookie_value
 
 
 @pytest.mark.asyncio

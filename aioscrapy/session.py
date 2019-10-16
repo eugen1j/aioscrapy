@@ -54,9 +54,7 @@ class ProxySessionPool(SessionPool):
         if proxy is not None:
             session_kwargs = self._session_kwargs
             if proxy in self._cookies:
-                if 'headers' not in session_kwargs:
-                    session_kwargs["headers"] = {}
-                session_kwargs["headers"]["Cookie"] = self._cookies[proxy]
+                session_kwargs["cookies"] = self._cookies[proxy]
             self._session_pool[proxy] = aiohttp.ClientSession(**session_kwargs)
             self._proxy_pool.pop(proxy)
 
