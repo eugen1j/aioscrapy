@@ -30,12 +30,11 @@ class SessionPool(abc.ABC):
 
 
 class ProxySessionPool(SessionPool):
-    def __init__(self, proxy_pool: ProxyPool, size: int, session_kwargs: dict = None):
+    def __init__(self, proxy_pool: ProxyPool, size: int, session_kwargs: dict = None, cookies: dict = None):
         self._size = size
         self._proxy_pool = proxy_pool
-        if session_kwargs is None:
-            session_kwargs = {}
-        self._session_kwargs = session_kwargs
+        self._session_kwargs = session_kwargs or {}
+        self._cookies = cookies or {}
         self._session_pool: Dict[Proxy, aiohttp.ClientSession] = {}
         for _ in range(self._size):
             self._add_session()
@@ -53,7 +52,12 @@ class ProxySessionPool(SessionPool):
     def _add_session(self) -> None:
         proxy = self._proxy_pool.rand()
         if proxy is not None:
-            self._session_pool[proxy] = aiohttp.ClientSession(**self._session_kwargs)
+            session_kwargs = self._session_kwargs
+            if proxy in self._cookies:
+                if 'headers' not in session_kwargs:
+                    session_kwargs["headers"] = {}
+                session_kwargs["headers"]["Cookie"] = self._cookies[proxy]
+            self._session_pool[proxy] = aiohttp.ClientSession(**session_kwargs)
             self._proxy_pool.pop(proxy)
 
     async def __aenter__(self):

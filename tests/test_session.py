@@ -50,6 +50,21 @@ async def test_proxy_session_pool():
 
 
 @pytest.mark.asyncio
+async def test_proxy_session_pool_with_cookies():
+    proxy = '127.0.0.1:8080'
+    cookie = "cookie1234"
+    cookies = {
+        proxy: cookie,
+    }
+    async with ProxySessionPool(ProxyPool([proxy]), 1, cookies=cookies) as pool:
+        proxy, session = pool.rand()
+        assert proxy == proxy
+        assert isinstance(session, aiohttp.ClientSession)
+        # noinspection PyProtectedMember
+        assert session._default_headers['Cookie'] == cookie
+
+
+@pytest.mark.asyncio
 async def test_single_session_pool():
     header_name, header_value = "x-test-header", "somevalue"
     pool = SingleSessionPool({
