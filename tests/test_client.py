@@ -7,7 +7,7 @@ from aioscrapy import SingleSessionPool
 
 from aioscrapy.cache import FakeCache
 from aioscrapy.client import Client, FakeClient, CacheClient, RetryClient, CacheOnlyClient, CacheSkipClient, WebClient, \
-    WebTextClient, WebByteClient
+    WebTextClient, WebByteClient, ImageClient
 
 
 class ForRetryClient(Client[str, str]):
@@ -119,3 +119,11 @@ async def test_web_byte_client_fetch_google():
     client = WebByteClient(SingleSessionPool())
     response = await client.fetch('https://google.com')
     assert isinstance(response, bytes)
+
+
+@pytest.mark.asyncio
+async def test_image_client_fetch_google():
+    client = ImageClient(SingleSessionPool())
+    assert await client.fetch('https://google.com') is None
+    assert isinstance(await client.fetch('https://google.com/favicon.ico'), bytes)
+

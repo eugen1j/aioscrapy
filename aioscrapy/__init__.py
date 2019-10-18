@@ -7,7 +7,8 @@ from .client import (
     CacheSkipClient,
     RetryClient,
     CrawlerClient,
-    WebClient
+    WebClient,
+    ImageClient
 )
 
 from .cache import (
