@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional, Tuple, Iterable
 
 from aiohttp import ClientResponse
+from http import HTTPStatus
 
 from .cache import Cache
 from .typedefs import KT, VT
@@ -117,6 +118,28 @@ class RetryClient(Client[KT, VT]):
             result = await self._client.fetch(key)
             if result is not None:
                 return result
+        return None
+
+
+class ImageClient(Client[KT, VT]):
+    def __init__(self, session_pool: SessionPool):
+        self._session_pool = session_pool
+
+    async def fetch(self, key: str) -> Optional[bytes]:
+        client = WebClient(self._session_pool)
+        response = await client.fetch(key)
+        if response is None:
+            return None
+
+        if response.status != HTTPStatus.OK:
+            return None
+
+        content_type = response.headers.get('content-type')
+        if content_type and isinstance(content_type, str) and content_type.startswith('image'):
+            await response.read()
+            # noinspection PyProtectedMember
+            return response._body
+
         return None
 
 
