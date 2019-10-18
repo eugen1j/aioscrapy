@@ -121,7 +121,7 @@ class RetryClient(Client[KT, VT]):
         return None
 
 
-class ImageClient(Client[KT, VT]):
+class ImageClient(Client[str, bytes]):
     def __init__(self, session_pool: SessionPool):
         self._session_pool = session_pool
 
