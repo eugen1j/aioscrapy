@@ -5,9 +5,9 @@ from aiohttp import ClientResponse
 
 from aioscrapy import SingleSessionPool
 
-from aioscrapy.cache import FakeCache
+from aioscrapy.cache import MemoryCache
 from aioscrapy.client import Client, FakeClient, CacheClient, RetryClient, CacheOnlyClient, CacheSkipClient, WebClient, \
-    WebTextClient, WebByteClient, ImageClient
+    WebTextClient, WebByteClient, ImageClient, FetchError, WebFetchError
 
 
 class ForRetryClient(Client[str, str]):
@@ -15,14 +15,14 @@ class ForRetryClient(Client[str, str]):
         self._try_count = try_count
         self._tries = dict()
 
-    async def fetch(self, key: str) -> Optional[str]:
+    async def fetch(self, key: str) -> str:
         if key not in self._tries:
             self._tries[key] = 0
         self._tries[key] += 1
 
         if self._tries[key] == self._try_count:
             return key
-        return None
+        raise FetchError()
 
 
 @pytest.mark.asyncio
@@ -36,7 +36,7 @@ async def test_fake_client():
 async def test_cache_client():
     client = CacheClient(
         FakeClient(),
-        FakeCache()
+        MemoryCache()
     )
 
     key = 'key'
@@ -46,7 +46,7 @@ async def test_cache_client():
 
 @pytest.mark.asyncio
 async def test_cache_only_client():
-    cache = FakeCache()
+    cache = MemoryCache()
     fake_client = FakeClient()
     key = 'key'
     client = CacheOnlyClient(
@@ -54,7 +54,8 @@ async def test_cache_only_client():
         cache
     )
 
-    assert await client.fetch(key) is None
+    with pytest.raises(FetchError):
+        await client.fetch(key)
     cache.set(key, await fake_client.fetch(key))
     assert await client.fetch(key) == key
 
@@ -63,21 +64,25 @@ async def test_cache_only_client():
 async def test_cache_skip_client():
     client = CacheSkipClient(
         FakeClient(),
-        FakeCache()
+        MemoryCache()
     )
 
     key = 'key'
     assert await client.fetch(key) == key
-    assert await client.fetch(key) is None
+    with pytest.raises(FetchError):
+        await client.fetch(key)
 
 
 @pytest.mark.asyncio
 async def test_for_retry_client():
-    for_retry_client = ForRetryClient(3)
+    client = ForRetryClient(3)
     key = 'key'
-    assert await for_retry_client.fetch(key) is None
-    assert await for_retry_client.fetch(key) is None
-    assert await for_retry_client.fetch(key) is key
+    with pytest.raises(FetchError):
+        await client.fetch(key)
+    with pytest.raises(FetchError):
+        await client.fetch(key)
+
+    assert await client.fetch(key) is key
 
 
 @pytest.mark.asyncio
@@ -87,7 +92,8 @@ async def test_retry_client_not_enough_tries():
         3
     )
     key = 'key'
-    assert await client.fetch(key) is None
+    with pytest.raises(FetchError):
+        await client.fetch(key)
 
 
 @pytest.mark.asyncio
@@ -124,6 +130,6 @@ async def test_web_byte_client_fetch_google():
 @pytest.mark.asyncio
 async def test_image_client_fetch_google():
     client = ImageClient(SingleSessionPool())
-    assert await client.fetch('https://google.com') is None
+    with pytest.raises(WebFetchError):
+        assert await client.fetch('https://google.com') is None
     assert isinstance(await client.fetch('https://google.com/favicon.ico'), bytes)
-

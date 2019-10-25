@@ -1,18 +1,22 @@
 import aiohttp
 import random
 import abc
-from typing import Dict, Collection, Optional
+from typing import Dict, Iterable
 from .typedefs import Proxy, Session
 
 
 class ProxyPool:
-    def __init__(self, proxies: Collection[Proxy]):
+    def __init__(self, proxies: Iterable[Proxy]):
         self._proxies = set(proxies)
 
-    def rand(self) -> Optional[Proxy]:
-        if len(self._proxies) == 0:
-            return None
-        return random.sample(self._proxies, 1)[0]
+    def rand(self) -> Proxy:
+        """
+        Raises IndexError on empty pool
+        """
+        try:
+            return random.sample(self._proxies, 1)[0]
+        except ValueError:
+            raise IndexError("No proxies left")
 
     def pop(self, proxy: str) -> None:
         if proxy in self._proxies:
@@ -22,10 +26,12 @@ class ProxyPool:
 class SessionPool(abc.ABC):
     @abc.abstractmethod
     def rand(self) -> Session:
-        """ """
+        """
+        Raises IndexError on empty pool
+        """
 
     @abc.abstractmethod
-    def pop(self, key: Optional[Proxy]) -> None:
+    def pop(self, key: Proxy) -> None:
         """ """
 
 
@@ -40,23 +46,26 @@ class ProxySessionPool(SessionPool):
             self._add_session()
 
     def rand(self) -> Session:
-        if len(self._session_pool) == 0:
+        try:
+            return random.choice(list(self._session_pool.items()))
+        except IndexError:
             raise IndexError('No sessions left')
-        return random.choice(list(self._session_pool.items()))
 
-    def pop(self, key: Optional[Proxy]) -> None:
+    def pop(self, key: Proxy) -> None:
         if key in self._session_pool:
             self._session_pool.pop(key)
             self._add_session()
 
     def _add_session(self) -> None:
-        proxy = self._proxy_pool.rand()
-        if proxy is not None:
+        try:
+            proxy = self._proxy_pool.rand()
             session_kwargs = self._session_kwargs
             if proxy in self._cookies:
                 session_kwargs["cookies"] = self._cookies[proxy]
             self._session_pool[proxy] = aiohttp.ClientSession(**session_kwargs)
             self._proxy_pool.pop(proxy)
+        except IndexError:
+            pass
 
     async def __aenter__(self):
         return self
@@ -75,5 +84,5 @@ class SingleSessionPool(SessionPool):
     def rand(self) -> Session:
         return self.session
 
-    def pop(self, key: Optional[Proxy]) -> None:
+    def pop(self, key: Proxy) -> None:
         pass

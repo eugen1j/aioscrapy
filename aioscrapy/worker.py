@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Generic, List, Dict, Iterable, Optional, Set
+from typing import Generic, List, Dict, Iterable, Set
 
 from .client import Client, CrawlerClient
 from .typedefs import KT, VT
@@ -21,9 +21,11 @@ class Dispatcher(Generic[KT]):
         if key in self._all and key not in self._done:
             self._done.add(key)
 
-    def get(self) -> Optional[KT]:
-        if len(self._new) != 0:
-            return self._new.pop()
+    def get(self) -> KT:
+        """
+        Raises IndexError if there are no tasks left.
+        """
+        return self._new.pop()
 
     def empty(self) -> bool:
         return len(self._done) == len(self._all)
@@ -57,8 +59,8 @@ class CrawlerWorker(Worker[KT, VT]):
     async def run(self) -> Dict[KT, VT]:
         results: Dict[KT, VT] = {}
         while not self._dispatcher.empty():
-            key = self._dispatcher.get()
-            if key is not None:
+            try:
+                key = self._dispatcher.get()
                 result = await self._client.fetch(key)
                 if result is not None:
                     new_keys, value = result
@@ -66,7 +68,7 @@ class CrawlerWorker(Worker[KT, VT]):
                         self._dispatcher.add(new_key)
                     results[key] = value
                 self._dispatcher.ack(key)
-            else:
+            except IndexError:
                 await asyncio.sleep(1)
         return results
 
@@ -79,12 +81,12 @@ class SimpleWorker(Worker[KT, VT]):
     async def run(self) -> Dict[KT, VT]:
         results: Dict[KT, VT] = {}
         while not self._dispatcher.empty():
-            key = self._dispatcher.get()
-            if key:
+            try:
+                key = self._dispatcher.get()
                 result = await self._client.fetch(key)
                 if result is not None:
                     results[key] = result
                 self._dispatcher.ack(key)
-            else:
+            except IndexError:
                 await asyncio.sleep(1)
         return results

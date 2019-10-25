@@ -1,4 +1,6 @@
-from aioscrapy.cache import FileCache, FakeCache
+import pytest
+
+from aioscrapy.cache import FileCache, MemoryCache
 
 
 def test_file_cache(tmpdir: str):
@@ -8,14 +10,16 @@ def test_file_cache(tmpdir: str):
     cache = FileCache(tmpdir)
     cache.set(key, value)
     assert cache.get(key) == value
-    assert cache.get(fake_key) is None
+    with pytest.raises(LookupError):
+        cache.get(fake_key)
 
 
-def test_fake_cache():
+def test_memory_cache():
     key = 'key'
     fake_key = 'fake_key'
     value = [1, 2, 3]
-    cache = FakeCache()
+    cache = MemoryCache()
     cache.set(key, value)
     assert cache.get(key) == value
-    assert cache.get(fake_key) is None
+    with pytest.raises(LookupError):
+        cache.get(fake_key)

@@ -14,9 +14,13 @@ def test_proxy_pool():
     proxy_pool.pop(proxy2)
     assert proxy_pool.rand() == proxy1
     proxy_pool.pop(proxy1)
-    assert proxy_pool.rand() is None
+
+    with pytest.raises(IndexError):
+        proxy_pool.rand()
     proxy_pool.pop(proxy1)
-    assert proxy_pool.rand() is None
+
+    with pytest.raises(IndexError):
+        proxy_pool.rand()
 
 
 @pytest.mark.asyncio
@@ -78,7 +82,6 @@ async def test_single_session_pool():
     # noinspection PyProtectedMember
     assert session._default_headers[header_name] == header_value
 
-    pool.pop(proxy)
     proxy, session = pool.rand()
     assert proxy is None
     assert isinstance(session, aiohttp.ClientSession)
