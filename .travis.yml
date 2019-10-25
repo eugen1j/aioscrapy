@@ -8,5 +8,7 @@ install:
 # command to run tests
 script:
   - python -m pytest --cov-report term --cov=aioscrapy
+  - python -m mypy aioscrapy --ignore-missing-imports
+  - python -m pylint aioscrapy --disable=E1136,R0903
 after_success:
   - codecov

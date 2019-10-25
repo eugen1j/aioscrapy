@@ -1,10 +1,10 @@
-import traceback
-import aiohttp
+"""
+Client
+"""
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Tuple, Iterable
-
-from aiohttp import ClientResponse, ClientError
+from typing import Generic, Tuple, Iterable
 from http import HTTPStatus
+from aiohttp import ClientResponse, ClientError, ClientHttpProxyError, ClientProxyConnectionError
 
 from .cache import Cache
 from .typedefs import KT, VT
@@ -12,43 +12,72 @@ from .session import SessionPool
 
 
 class FetchError(Exception):
-    pass
+    """
+    FetchError
+    """
 
 
 class OSFetchError(FetchError, OSError):
-    pass
+    """
+    OSFetchError
+    """
 
 
 class WebFetchError(FetchError, ClientError):
-    pass
+    """
+    WebFetchError
+    """
 
 
 class NoSessionLeftError(FetchError, IndexError):
-    pass
+    """
+    NoSessionLeftError
+    """
 
 
 class Client(ABC, Generic[KT, VT]):
+    """
+    Client
+    """
+
     @abstractmethod
     async def fetch(self, key: KT) -> VT:
         """
-        Raises FetchError
+        Raises FetchError.
         :param key:
         :return:
         """
 
 
 class CrawlerClient(Client, ABC, Generic[KT, VT]):
+    """
+    CrawlerClient
+    """
+
     @abstractmethod
     async def fetch(self, key: KT) -> Tuple[Iterable[KT], VT]:
-        pass
+        """
+        Raises FetchError.
+        :param key:
+        :return:
+        """
 
 
 class CacheClient(Client[str, VT]):
+    """
+    CacheClient
+    """
+
     def __init__(self, client: Client[str, VT], cache: Cache[str, VT]):
         self._client = client
         self._cache = cache
 
-    async def fetch(self, key: str) -> Optional[VT]:
+    async def fetch(self, key: str) -> VT:
+        """
+
+        :param key:
+        :return:
+        """
         try:
             value = self._cache.get(key)
         except LookupError:
@@ -62,11 +91,20 @@ class CacheClient(Client[str, VT]):
 
 
 class CacheOnlyClient(Client[str, VT]):
+    """
+    CacheOnlyClient
+    """
+
     def __init__(self, client: Client[str, VT], cache: Cache[str, VT]):
         self._client = client
         self._cache = cache
 
     async def fetch(self, key: str) -> VT:
+        """
+
+        :param key:
+        :return:
+        """
         try:
             return self._cache.get(key)
         except LookupError:
@@ -74,11 +112,20 @@ class CacheOnlyClient(Client[str, VT]):
 
 
 class CacheSkipClient(Client[str, VT]):
+    """
+    CacheSkipClient
+    """
+
     def __init__(self, client: Client[str, VT], cache: Cache[str, VT]):
         self._client = client
         self._cache = cache
 
     async def fetch(self, key: str) -> VT:
+        """
+
+        :param key:
+        :return:
+        """
         try:
             self._cache.get(key)
             raise FetchError(f"Key {key} exists")
@@ -95,49 +142,80 @@ class CacheSkipClient(Client[str, VT]):
 
 
 class WebClient(Client[str, ClientResponse]):
+    """
+    WebClient
+    """
+
     def __init__(self, session_pool: SessionPool):
         self._session_pool = session_pool
 
     async def fetch(self, key: str) -> ClientResponse:
+        """
+
+        :param key:
+        :return:
+        """
         try:
             proxy, session = self._session_pool.rand()
         except IndexError:
             raise NoSessionLeftError()
 
         try:
-            response: aiohttp.ClientResponse = await session.get(key, proxy=proxy)
+            response: ClientResponse = await session.get(key, proxy=proxy)
             await response.read()
             return response
-        except (aiohttp.ClientHttpProxyError, aiohttp.ClientProxyConnectionError):
+        except (ClientHttpProxyError, ClientProxyConnectionError):
             if proxy is not None:
                 self._session_pool.pop(proxy)
             raise WebFetchError()
-        except aiohttp.ClientError:
+        except ClientError:
             raise WebFetchError()
 
 
 class WebTextClient(Client[str, str]):
+    """
+    WebTextClient
+    """
+
     def __init__(self, session_pool: SessionPool):
         self._session_pool = session_pool
 
     async def fetch(self, key: str) -> str:
+        """
+
+        :param key:
+        :return:
+        """
         client = WebClient(self._session_pool)
         response = await client.fetch(key)
         return await response.text()
 
 
 class WebByteClient(Client[str, bytes]):
+    """
+    WebByteClient
+    """
+
     def __init__(self, session_pool: SessionPool):
         self._session_pool = session_pool
 
-    async def fetch(self, key: str) -> Optional[bytes]:
+    async def fetch(self, key: str) -> bytes:
+        """
+
+        :param key:
+        :return:
+        """
         client = WebClient(self._session_pool)
         response = await client.fetch(key)
         # noinspection PyProtectedMember
-        return response._body
+        return response._body  # pylint: disable=W0212
 
 
 class RetryClient(Client[KT, VT]):
+    """
+    RetryClient
+    """
+
     def __init__(self, client: Client[KT, VT], retry_count: int):
         if retry_count <= 0:
             raise ValueError("retry_count must be greater than zero")
@@ -145,6 +223,11 @@ class RetryClient(Client[KT, VT]):
         self._client = client
 
     async def fetch(self, key: KT) -> VT:
+        """
+
+        :param key:
+        :return:
+        """
         for _ in range(self._retry_count - 1):
             try:
                 return await self._client.fetch(key)
@@ -154,24 +237,42 @@ class RetryClient(Client[KT, VT]):
 
 
 class ImageClient(Client[str, bytes]):
+    """
+    ImageClient
+    """
+
     def __init__(self, session_pool: SessionPool):
         self._session_pool = session_pool
 
-    async def fetch(self, key: str) -> Optional[bytes]:
+    async def fetch(self, key: str) -> bytes:
+        """
+
+        :param key:
+        :return:
+        """
         client = WebClient(self._session_pool)
         response = await client.fetch(key)
         if response.status != HTTPStatus.OK:
-            raise WebFetchError("HTTP status is not 200 ")
+            raise WebFetchError("HTTP status is not 200")
 
         content_type = response.headers.get('content-type')
 
         if content_type and isinstance(content_type, str) and content_type.startswith('image'):
             # noinspection PyProtectedMember
-            return response._body
+            return response._body  # pylint: disable=W0212
 
         raise WebFetchError(f"Invalid content type {content_type}")
 
 
 class FakeClient(Client[str, str]):
+    """
+    FakeClient
+    """
+
     async def fetch(self, key: str) -> str:
+        """
+
+        :param key:
+        :return:
+        """
         return key

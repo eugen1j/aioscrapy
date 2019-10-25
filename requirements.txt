@@ -7,3 +7,5 @@ lxml
 pytest-aiohttp
 codecov
 pytest-cov
+mypy
+pylint

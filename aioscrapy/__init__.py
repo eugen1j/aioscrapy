@@ -1,3 +1,6 @@
+"""
+aioscrapy
+"""
 from .client import (
     WebTextClient,
     WebByteClient,
