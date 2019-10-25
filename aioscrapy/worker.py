@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from abc import ABC, abstractmethod
 from typing import Generic, List, Dict, Iterable, Set
 
@@ -62,7 +63,7 @@ class CrawlerWorker(Worker[KT, VT]):
             try:
                 key = self._dispatcher.get()
             except IndexError:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.05)
             else:
                 try:
                     new_keys, result = await self._client.fetch(key)
@@ -88,7 +89,7 @@ class SimpleWorker(Worker[KT, VT]):
             try:
                 key = self._dispatcher.get()
             except IndexError:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.05)
             else:
                 try:
                     results[key] = await self._client.fetch(key)

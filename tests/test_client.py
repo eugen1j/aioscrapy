@@ -27,7 +27,6 @@ class ForRetryClient(Client[str, str]):
         raise FetchError()
 
 
-
 class BrokenCache(Cache[KT, VT]):
     def get(self, key: KT) -> VT:
         raise LookupError()
@@ -85,6 +84,18 @@ async def test_cache_client():
 
 
 @pytest.mark.asyncio
+async def test_cache_client_broken_cache():
+    client = CacheClient(
+        FakeClient(),
+        BrokenCache()
+    )
+
+    key = 'key'
+    with pytest.raises(OSError):
+        await client.fetch(key)
+
+
+@pytest.mark.asyncio
 async def test_cache_only_client():
     cache = MemoryCache()
     fake_client = FakeClient()
@@ -115,6 +126,18 @@ async def test_cache_skip_client():
 
 @pytest.mark.asyncio
 async def test_cache_skip_client_broken_cache():
+    client = CacheSkipClient(
+        FakeClient(),
+        BrokenCache()
+    )
+
+    key = 'key'
+    with pytest.raises(OSError):
+        await client.fetch(key)
+
+
+@pytest.mark.asyncio
+async def test_cache_skip_client():
     client = CacheSkipClient(
         FakeClient(),
         MemoryCache()

@@ -16,7 +16,7 @@ class ReduceStringClient(CrawlerClient[str, str]):
 
 class SlowCrawlerClient(CrawlerClient):
     async def fetch(self, key: str) -> Tuple[List[str], str]:
-        await asyncio.sleep(0.11)
+        await asyncio.sleep(0.1)
         return [], key
 
 
@@ -73,22 +73,12 @@ async def test_simple_worker():
 
 
 @pytest.mark.asyncio
-async def test_simple_worker_sleep():
-    keys = ['key1']
+async def test_simple_worker_fails():
+    keys = ['']
     dispatcher = Dispatcher(keys)
-    client = SlowCrawlerClient()
+    client = ReduceStringClient()
     worker = SimpleWorker(dispatcher, client)
-    assert await worker.run() == {key: ([], key) for key in keys}
-
-
-@pytest.mark.asyncio
-async def test_crawler_worker_sleep():
-    keys = ['key1']
-    dispatcher = Dispatcher(keys)
-    client = SlowCrawlerClient()
-    worker = CrawlerWorker(dispatcher, client)
-    result = await worker.run()
-    assert result == {key: key for key in keys}
+    assert await worker.run() == {}
 
 
 @pytest.mark.asyncio
@@ -114,6 +104,30 @@ async def test_master():
     client = FakeClient()
     worker1 = SimpleWorker(dispatcher, client)
     worker2 = SimpleWorker(dispatcher, client)
+    master = Master((worker1, worker2))
+    result = await master.run()
+    assert result == {key: key for key in keys}
+
+
+@pytest.mark.asyncio
+async def test_simple_worker_sleep_slow_client():
+    keys = ['key1']
+    dispatcher = Dispatcher(keys)
+    client = SlowCrawlerClient()
+    worker1 = SimpleWorker(dispatcher, client)
+    worker2 = SimpleWorker(dispatcher, client)
+    master = Master((worker1, worker2))
+    result = await master.run()
+    assert result == {key: ([], key) for key in keys}
+
+
+@pytest.mark.asyncio
+async def test_crawler_worker_sleep_slow_client():
+    keys = ['key1']
+    dispatcher = Dispatcher(keys)
+    client = SlowCrawlerClient()
+    worker1 = CrawlerWorker(dispatcher, client)
+    worker2 = CrawlerWorker(dispatcher, client)
     master = Master((worker1, worker2))
     result = await master.run()
     assert result == {key: key for key in keys}
