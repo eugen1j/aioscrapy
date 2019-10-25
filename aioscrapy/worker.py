@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Generic, List, Dict, Iterable, Set
 
-from .client import Client, CrawlerClient
+from .client import Client, CrawlerClient, FetchError
 from .typedefs import KT, VT
 
 
@@ -61,15 +61,19 @@ class CrawlerWorker(Worker[KT, VT]):
         while not self._dispatcher.empty():
             try:
                 key = self._dispatcher.get()
-                result = await self._client.fetch(key)
-                if result is not None:
-                    new_keys, value = result
+            except IndexError:
+                await asyncio.sleep(0.1)
+            else:
+                try:
+                    new_keys, result = await self._client.fetch(key)
                     for new_key in new_keys:
                         self._dispatcher.add(new_key)
-                    results[key] = value
-                self._dispatcher.ack(key)
-            except IndexError:
-                await asyncio.sleep(1)
+                    results[key] = result
+                except FetchError:
+                    pass
+                finally:
+                    self._dispatcher.ack(key)
+
         return results
 
 
@@ -83,10 +87,15 @@ class SimpleWorker(Worker[KT, VT]):
         while not self._dispatcher.empty():
             try:
                 key = self._dispatcher.get()
-                result = await self._client.fetch(key)
-                if result is not None:
-                    results[key] = result
-                self._dispatcher.ack(key)
             except IndexError:
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.1)
+            else:
+                try:
+                    results[key] = await self._client.fetch(key)
+                    self._dispatcher.ack(key)
+                except FetchError:
+                    pass
+                finally:
+                    self._dispatcher.ack(key)
+
         return results

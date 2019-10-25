@@ -85,4 +85,6 @@ class SingleSessionPool(SessionPool):
         return self.session
 
     def pop(self, key: Proxy) -> None:
-        pass
+        """
+        Keeps session
+        """
