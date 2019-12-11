@@ -9,3 +9,4 @@ codecov
 pytest-cov
 mypy
 pylint
+flake8

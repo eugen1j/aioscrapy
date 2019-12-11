@@ -4,7 +4,9 @@ Client
 from abc import ABC, abstractmethod
 from typing import Generic, Tuple, Iterable
 from http import HTTPStatus
-from aiohttp import ClientResponse, ClientError, ClientHttpProxyError, ClientProxyConnectionError
+from aiohttp import (
+    ClientResponse, ClientError,
+    ClientHttpProxyError, ClientProxyConnectionError)
 
 from .cache import Cache
 from .typedefs import KT, VT
@@ -257,7 +259,9 @@ class ImageClient(Client[str, bytes]):
 
         content_type = response.headers.get('content-type')
 
-        if content_type and isinstance(content_type, str) and content_type.startswith('image'):
+        if content_type \
+                and isinstance(content_type, str) \
+                and content_type.startswith('image'):
             # noinspection PyProtectedMember
             return response._body  # pylint: disable=W0212
 

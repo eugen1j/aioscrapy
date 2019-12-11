@@ -92,7 +92,8 @@ class CrawlerWorker(Worker[KT, VT]):
     CrawlerWorker
     """
 
-    def __init__(self, dispatcher: Dispatcher[KT], client: CrawlerClient[KT, VT]):
+    def __init__(self, dispatcher: Dispatcher[KT],
+                 client: CrawlerClient[KT, VT]):
         self._dispatcher = dispatcher
         self._client = client
 
