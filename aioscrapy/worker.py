@@ -1,46 +1,84 @@
+"""
+worker module.
+"""
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Generic, List, Dict, Iterable, Optional, Set
+from typing import Generic, List, Dict, Iterable, Set
 
-from .client import Client, CrawlerClient
+from .client import Client, CrawlerClient, FetchError
 from .typedefs import KT, VT
 
 
 class Dispatcher(Generic[KT]):
+    """
+    Handles tasks.
+    """
+
     def __init__(self, state: Iterable[KT]):
         self._done: Set[KT] = set()
         self._new: List[KT] = list(set(state))
         self._all: Set[KT] = set(state)
 
     def add(self, key: KT):
+        """
+
+        :param key:
+        :return:
+        """
         if key not in self._all:
             self._all.add(key)
             self._new.append(key)
 
     def ack(self, key: KT):
+        """
+
+        :param key:
+        :return:
+        """
         if key in self._all and key not in self._done:
             self._done.add(key)
 
-    def get(self) -> Optional[KT]:
-        if len(self._new) != 0:
-            return self._new.pop()
+    def get(self) -> KT:
+        """
+        Raises IndexError if there are no tasks left.
+        """
+        return self._new.pop()
 
     def empty(self) -> bool:
+        """
+
+        :return:
+        """
         return len(self._done) == len(self._all)
 
 
 class Worker(ABC, Generic[KT, VT]):
+    """
+    Worker
+    """
+
     @abstractmethod
     async def run(self) -> Dict[KT, VT]:
-        """ """
+        """
+
+        :return:
+        """
 
 
 class Master(Generic[KT, VT]):
+    """
+    Runs multiple Workers together
+    """
+
     def __init__(self, workers: Iterable[Worker[KT, VT]]):
         self._workers = workers
 
     async def run(self) -> Dict[KT, VT]:
-        result = {}
+        """
+
+        :return:
+        """
+        result: Dict[KT, VT] = {}
         worker_results = await asyncio.gather(*[
             worker.run() for worker in self._workers
         ])
@@ -50,41 +88,67 @@ class Master(Generic[KT, VT]):
 
 
 class CrawlerWorker(Worker[KT, VT]):
-    def __init__(self, dispatcher: Dispatcher[KT], client: CrawlerClient[KT, VT]):
+    """
+    CrawlerWorker
+    """
+
+    def __init__(self, dispatcher: Dispatcher[KT],
+                 client: CrawlerClient[KT, VT]):
         self._dispatcher = dispatcher
         self._client = client
 
     async def run(self) -> Dict[KT, VT]:
+        """
+
+        :return:
+        """
         results: Dict[KT, VT] = {}
         while not self._dispatcher.empty():
-            key = self._dispatcher.get()
-            if key is not None:
-                result = await self._client.fetch(key)
-                if result is not None:
-                    new_keys, value = result
+            try:
+                key = self._dispatcher.get()
+            except IndexError:
+                await asyncio.sleep(0.05)
+            else:
+                try:
+                    new_keys, result = await self._client.fetch(key)
                     for new_key in new_keys:
                         self._dispatcher.add(new_key)
-                    results[key] = value
-                self._dispatcher.ack(key)
-            else:
-                await asyncio.sleep(1)
+                    results[key] = result
+                except FetchError:
+                    pass
+                finally:
+                    self._dispatcher.ack(key)
+
         return results
 
 
 class SimpleWorker(Worker[KT, VT]):
+    """
+    SimpleWorker
+    """
+
     def __init__(self, dispatcher: Dispatcher[KT], client: Client[KT, VT]):
         self._dispatcher = dispatcher
         self._client = client
 
     async def run(self) -> Dict[KT, VT]:
+        """
+
+        :return:
+        """
         results: Dict[KT, VT] = {}
         while not self._dispatcher.empty():
-            key = self._dispatcher.get()
-            if key:
-                result = await self._client.fetch(key)
-                if result is not None:
-                    results[key] = result
-                self._dispatcher.ack(key)
+            try:
+                key = self._dispatcher.get()
+            except IndexError:
+                await asyncio.sleep(0.05)
             else:
-                await asyncio.sleep(1)
+                try:
+                    results[key] = await self._client.fetch(key)
+                    self._dispatcher.ack(key)
+                except FetchError:
+                    pass
+                finally:
+                    self._dispatcher.ack(key)
+
         return results

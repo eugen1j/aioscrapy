@@ -1,3 +1,7 @@
+# flake8: noqa
+"""
+aioscrapy
+"""
 from .client import (
     WebTextClient,
     WebByteClient,
@@ -14,12 +18,6 @@ from .client import (
 from .cache import (
     Cache,
     FileCache
-)
-
-from .html import (
-    select_one,
-    select_text_one,
-    select_all
 )
 
 from .session import (

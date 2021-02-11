@@ -1,0 +1,9 @@
+pyfakefs
+pytest
+aiohttp
+pytest-asyncio
+pytest-aiohttp
+codecov
+pytest-cov
+mypy
+flake8

@@ -1,9 +1,1 @@
-pyfakefs
-pytest
-beautifulsoup4
 aiohttp
-pytest-asyncio
-lxml
-pytest-aiohttp
-codecov
-pytest-cov
