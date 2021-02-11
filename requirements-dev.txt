@@ -7,3 +7,5 @@ codecov
 pytest-cov
 mypy
 flake8
+wheel
+twine
