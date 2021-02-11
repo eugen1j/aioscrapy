@@ -20,12 +20,6 @@ from .cache import (
     FileCache
 )
 
-from .html import (
-    select_one,
-    select_text_one,
-    select_all
-)
-
 from .session import (
     ProxyPool,
     SessionPool,
