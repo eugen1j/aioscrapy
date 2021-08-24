@@ -10,8 +10,8 @@ DESCRIPTION = "Python asynchronous library for web scraping"
 URL = "https://github.com/eugen1j/aioscrapy"
 EMAIL = "eugenij.bondar@gmail.com"
 AUTHOR = "eugen1j"
-REQUIRES_PYTHON = ">=3.7.0"
-VERSION = "0.1.9"
+REQUIRES_PYTHON = ">=3.6.0"
+VERSION = "0.1.10"
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(f"{here}/README.md") as f:
@@ -85,7 +85,7 @@ setup(
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.6",
         "Development Status :: 5 - Production/Stable",
         "Framework :: AsyncIO",
         "Operating System :: Unix",
